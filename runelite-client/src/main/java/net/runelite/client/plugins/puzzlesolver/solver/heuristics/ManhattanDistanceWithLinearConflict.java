@@ -118,64 +118,54 @@ public class ManhattanDistanceWithLinearConflict implements Heuristic
 
 		int linearConflict = 0;
 
-		for (int x = 0; x < DIMENSION; x++)
-		{
-			int max = -1;
+		// Linear conflict columns.
+		for (int x = 0; x < DIMENSION; x++) {
+			for (int y1 = 0; y1 < DIMENSION - 1; y1++) {
+				int piece1 = state.getPiece(x, y1);
+				if (piece1 == -1) { continue; }
 
-			for (int y = 0; y < DIMENSION; y++)
-			{
-				int piece = state.getPiece(x, y);
+				int goal1X = piece1 % DIMENSION;
+				int goal1Y = piece1 / DIMENSION;
+				if (goal1X != x) { continue; }
 
-				if (piece == -1)
-				{
-					continue;
-				}
+				for (int y2 = y1 + 1; y2 < DIMENSION; y2++) {
+					int piece2 = state.getPiece(x, y2);
+					if (piece2 == -1) { continue; }
 
-				int goalX = piece % DIMENSION;
+					int goal2X = piece2 % DIMENSION;
+					int goal2Y = piece2 / DIMENSION;
+					if (goal2X != x) { continue; }
 
-				if (x != goalX)
-				{
-					continue;
-				}
-
-				if (piece > max)
-				{
-					max = piece;
-				}
-				else
-				{
-					linearConflict += 2;
+					// Share same goal column, y2 comes after y1, but has goal before y1s goal.
+					if (goal2Y < goal1Y) {
+						linearConflict += 2;
+					}
 				}
 			}
 		}
 
-		for (int y = 0; y < DIMENSION; y++)
-		{
-			int max = -1;
+		// Linear conflict rows.
+		for (int y = 0; y < DIMENSION; y++) {
+			for (int x1 = 0; x1 < DIMENSION - 1; x1++) {
+				int piece1 = state.getPiece(x1, y);
+				if (piece1 == -1) { continue; }
 
-			for (int x = 0; x < DIMENSION; x++)
-			{
-				int piece = state.getPiece(x, y);
+				int goal1X = piece1 % DIMENSION;
+				int goal1Y = piece1 / DIMENSION;
+				if (goal1Y != y) { continue; }
 
-				if (piece == -1)
-				{
-					continue;
-				}
+				for (int x2 = x1 + 1; x2 < DIMENSION; x2++) {
+					int piece2 = state.getPiece(x2, y);
+					if (piece2 == -1) { continue; }
 
-				int goalY = piece / DIMENSION;
+					int goal2X = piece2 % DIMENSION;
+					int goal2Y = piece2 / DIMENSION;
+					if (goal2Y != y) { continue; }
 
-				if (y != goalY)
-				{
-					continue;
-				}
-
-				if (piece > max)
-				{
-					max = piece;
-				}
-				else
-				{
-					linearConflict += 2;
+					// Share same goal row, x2 comes after x1, but has goal before x1s goal.
+					if (goal2X < goal1X) {
+						linearConflict += 2;
+					}
 				}
 			}
 		}

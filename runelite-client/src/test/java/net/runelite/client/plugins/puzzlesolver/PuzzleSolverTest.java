@@ -158,7 +158,7 @@ public class PuzzleSolverTest
 				avg_lc += l;
 			}
 
-			System.out.println(j + " (MANHATTAN): " + (avg_h/10D) + "ms" + " (LC): " + (avg_lc/10D) + "ms");
+			System.out.println("PUZZLE #" + j + " (MANHATTAN): " + (avg_h/10D) + "ms" + " (MANHATTAN+LC): " + (avg_lc/10D) + "ms");
 		}
 
 	}
