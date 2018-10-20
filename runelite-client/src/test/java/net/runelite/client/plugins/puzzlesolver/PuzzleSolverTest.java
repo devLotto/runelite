@@ -28,6 +28,7 @@ package net.runelite.client.plugins.puzzlesolver;
 import net.runelite.client.plugins.puzzlesolver.solver.PuzzleSolver;
 import net.runelite.client.plugins.puzzlesolver.solver.PuzzleState;
 import net.runelite.client.plugins.puzzlesolver.solver.heuristics.ManhattanDistance;
+import net.runelite.client.plugins.puzzlesolver.solver.heuristics.ManhattanDistanceWithLinearConflict;
 import net.runelite.client.plugins.puzzlesolver.solver.pathfinding.IDAStar;
 import org.junit.Test;
 import static org.junit.Assert.assertFalse;
@@ -88,14 +89,77 @@ public class PuzzleSolverTest
 	@Test
 	public void testSolver()
 	{
-		for (PuzzleState state : START_STATES)
+		for (int i = 0; i < 4; i++)
 		{
-			PuzzleSolver solver = new PuzzleSolver(new IDAStar(new ManhattanDistance()), state);
-			solver.run();
+			for (int j = 0; j < START_STATES.length; j++)
+			{
+				PuzzleState state = START_STATES[j];
 
-			assertTrue(solver.hasSolution());
-			assertFalse(solver.hasFailed());
-			assertTrue(solver.getStep(solver.getStepCount() - 1).hasPieces(FINISHED_STATE));
+				state.h = -1;
+
+				{
+					long t = System.nanoTime();
+					PuzzleSolver solver = new PuzzleSolver(new IDAStar(new ManhattanDistance()), state);
+					solver.run();
+					long t2 = System.nanoTime();
+				}
+
+				state.h = -1;
+
+				{
+					long t = System.nanoTime();
+					PuzzleSolver solver = new PuzzleSolver(new IDAStar(new ManhattanDistance()), state);
+					solver.run();
+					long t2 = System.nanoTime();
+				}
+			}
 		}
+
+		long[][] speeds_manhattan = new long[START_STATES.length][10];
+		long[][] speeds_lc = new long[START_STATES.length][10];
+
+		for (int i = 0; i < 10; i++)
+		{
+			for (int j = 0; j < START_STATES.length; j++)
+			{
+				PuzzleState state = START_STATES[j];
+
+				state.h = -1;
+
+				{
+					long t = System.nanoTime();
+					PuzzleSolver solver = new PuzzleSolver(new IDAStar(new ManhattanDistance()), state);
+					solver.run();
+					long t2 = System.nanoTime();
+					speeds_manhattan[j][i] = (int) ((t2 - t)/1E6);
+				}
+
+				state.h = -1;
+
+				{
+					long t = System.nanoTime();
+					PuzzleSolver solver = new PuzzleSolver(new IDAStar(new ManhattanDistanceWithLinearConflict()), state);
+					solver.run();
+					long t2 = System.nanoTime();
+					speeds_lc[j][i] = (int) ((t2 - t)/1E6);
+				}
+			}
+		}
+
+		for (int j = 0; j < START_STATES.length; j++)
+		{
+			int avg_h = 0;
+			for (long l : speeds_manhattan[j]) {
+				avg_h += l;
+			}
+
+			int avg_lc = 0;
+			for (long l : speeds_lc[j]) {
+				avg_lc += l;
+			}
+
+			System.out.println(j + " (MANHATTAN): " + (avg_h/10D) + "ms" + " (LC): " + (avg_lc/10D) + "ms");
+		}
+
 	}
 }

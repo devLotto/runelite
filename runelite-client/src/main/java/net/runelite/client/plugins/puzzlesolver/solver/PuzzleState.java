@@ -38,7 +38,7 @@ public class PuzzleState
 	private int[] pieces;
 	private int emptyPiece = -1;
 
-	private int h = -1;
+	public int h = -1;
 
 	public PuzzleState(int[] pieces)
 	{
@@ -176,6 +176,17 @@ public class PuzzleState
 			h = heuristic.computeValue(this);
 		}
 
-		return h;
+		return (h >> 16) + h & 0xFFFF;
+	}
+
+	public int getPersistentHeuristicValue(Heuristic heuristic)
+	{
+		if (h == -1)
+		{
+			// cache the value
+			h = heuristic.computeValue(this);
+		}
+
+		return h & 0xFFFF;
 	}
 }
