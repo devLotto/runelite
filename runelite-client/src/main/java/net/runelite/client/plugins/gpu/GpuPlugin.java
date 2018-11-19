@@ -40,6 +40,7 @@ import com.jogamp.opengl.GLDrawableFactory;
 import com.jogamp.opengl.GLException;
 import com.jogamp.opengl.GLProfile;
 import java.awt.Canvas;
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
@@ -663,11 +664,28 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			return;
 		}
 
-		final int canvasHeight = client.getCanvasHeight();
-		final int canvasWidth = client.getCanvasWidth();
+		int canvasHeight = client.getCanvasHeight();
+		int canvasWidth = client.getCanvasWidth();
 
-		final int viewportHeight = client.getViewportHeight();
-		final int viewportWidth = client.getViewportWidth();
+		int viewportHeight = client.getViewportHeight();
+		int viewportWidth = client.getViewportWidth();
+
+		if (client.isStretchedEnabled())
+		{
+			Dimension stretchedDimensions = client.getStretchedDimensions();
+
+			final int stretchedHeight = stretchedDimensions.height;
+			final int stretchedWidth = stretchedDimensions.width;
+
+			final double ratioHeight = stretchedHeight / (double) canvasHeight;
+			final double ratioWidth = stretchedWidth / (double) canvasWidth;
+
+			viewportHeight = (int) (viewportHeight * ratioHeight);
+			viewportWidth = (int) (viewportWidth * ratioWidth);
+
+			canvasHeight = stretchedHeight;
+			canvasWidth = stretchedWidth;
+		}
 
 		gl.glClear(gl.GL_COLOR_BUFFER_BIT);
 
