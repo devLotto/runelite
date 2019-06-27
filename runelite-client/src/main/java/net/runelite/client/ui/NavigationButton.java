@@ -62,6 +62,11 @@ public class NavigationButton
 	private boolean selected;
 
 	/**
+	 * On button having been fully initialized and added to frame.
+	 */
+	private Runnable onReady;
+
+	/**
 	 * On click action of the button.
 	 */
 	private Runnable onClick;
