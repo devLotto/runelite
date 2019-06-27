@@ -25,6 +25,7 @@
 package net.runelite.client.plugins.feed;
 
 import com.google.common.base.Suppliers;
+import com.google.common.primitives.Longs;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -44,6 +45,7 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.http.api.feed.FeedClient;
+import net.runelite.http.api.feed.FeedItemType;
 import net.runelite.http.api.feed.FeedResult;
 
 @PluginDescriptor(
@@ -84,7 +86,7 @@ public class FeedPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		feedPanel = new FeedPanel(config, feedSupplier);
+		feedPanel = new FeedPanel(config);
 
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "icon.png");
 
@@ -93,10 +95,10 @@ public class FeedPlugin extends Plugin
 			.icon(icon)
 			.priority(8)
 			.panel(feedPanel)
+			.onReady(() -> executorService.submit(() -> updateFeed(true)))
 			.build();
 
 		clientToolbar.addNavigation(navButton);
-		executorService.submit(this::updateFeed);
 	}
 
 	@Override
@@ -105,9 +107,43 @@ public class FeedPlugin extends Plugin
 		clientToolbar.removeNavigation(navButton);
 	}
 
-	private void updateFeed()
+	private void updateFeed(boolean openPanelOnChange)
 	{
-		feedPanel.rebuildFeed();
+		FeedResult feed = feedSupplier.get();
+
+		if (feed == null)
+		{
+			return;
+		}
+
+		feedPanel.rebuildFeed(feed);
+
+		if (config.includeBlogPosts() && openPanelOnChange)
+		{
+			feed.getItems()
+				.stream()
+				.filter(i -> i.getType() == FeedItemType.BLOG_POST)
+				// Find the latest blog post
+				.max((o1, o2) -> Longs.compare(o1.getTimestamp(), o2.getTimestamp()))
+				// Select the blog post only if we haven't seen it before
+				.filter(i ->
+				{
+					long lastSeenBlogPostTimestamp = Long.parseLong(config.lastSeenBlogPostTimestamp());
+					return lastSeenBlogPostTimestamp < i.getTimestamp();
+				})
+				.ifPresent(i ->
+				{
+					if (!navButton.isSelected())
+					{
+						// If we haven't seen the latest feed item,
+						// open the feed panel.
+						navButton.getOnSelect().run();
+					}
+
+					// Update last seen timestamp
+					config.lastSeenBlogPostTimestamp(String.valueOf(i.getTimestamp()));
+				});
+		}
 	}
 
 	@Subscribe
@@ -115,7 +151,7 @@ public class FeedPlugin extends Plugin
 	{
 		if (event.getGroup().equals("feed"))
 		{
-			executorService.submit(this::updateFeed);
+			executorService.submit(() -> updateFeed(false));
 		}
 	}
 
@@ -126,7 +162,7 @@ public class FeedPlugin extends Plugin
 	)
 	public void updateFeedTask()
 	{
-		updateFeed();
+		updateFeed(false);
 	}
 
 	@Provides

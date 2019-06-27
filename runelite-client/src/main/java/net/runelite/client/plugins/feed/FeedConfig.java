@@ -39,4 +39,22 @@ public interface FeedConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "lastSeenBlogPostTimestamp",
+		name = "",
+		description = "",
+		hidden = true
+	)
+	default String lastSeenBlogPostTimestamp()
+	{
+		return "0";
+	}
+
+	@ConfigItem(
+		keyName = "lastSeenBlogPostTimestamp",
+		name = "",
+		description = ""
+	)
+	void lastSeenBlogPostTimestamp(String timestamp);
 }
